@@ -9,12 +9,19 @@ import (
 
 type (
 	Config struct {
-		TelegramBotConfig TelegramBotConfig `yaml:"telegram-bot"`
 		LoggerConfig      LoggerConfig      `yaml:"logger"`
+		SydneyConfig      SydneyConfig      `yaml:"sydney"`
+		TelegramBotConfig TelegramBotConfig `yaml:"telegram-bot"`
+	}
+
+	SydneyConfig struct {
+		CookieU string `yaml:"cookie-u"`
+
+		UseProxy  bool   `yaml:"use-proxy"`
+		HttpProxy string `yaml:"http-proxy"`
 	}
 
 	TelegramBotConfig struct {
-		BingU  string `yaml:"bing-u"`
 		ApiKey string `yaml:"api-key"`
 
 		FallbackAnswer string `yaml:"callback-answer"`

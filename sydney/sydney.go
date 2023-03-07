@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sydney/provider"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,18 +35,19 @@ func appendIdentifier(msg map[string]interface{}) ([]byte, error) {
 	return data, nil
 }
 
-func NewSydney(cookieU string, logger *zap.Logger) *Sydney {
+func NewSydney(logger *zap.Logger, cfg provider.SydneyConfig) *Sydney {
 	chat := Sydney{
-		logger:  logger,
-		CookieU: cookieU,
+		logger: logger,
+		cfg:    cfg,
 	}
 	return &chat
 }
 
 type Sydney struct {
-	logger       *zap.Logger
-	Debug        bool
-	CookieU      string
+	logger *zap.Logger
+
+	cfg provider.SydneyConfig
+
 	Conv         *Conversation
 	invocationId int
 
@@ -163,23 +165,31 @@ func (r *Sydney) CreateConversation() (err error) {
 		return err
 	}
 	jar.SetCookies(u, []*http.Cookie{
-		{Name: "_U", Value: r.CookieU},
+		{Name: "_U", Value: r.cfg.CookieU},
 	})
 
-	proxy, err := url.Parse("http://192.168.1.114:7890")
-	if err != nil {
-		return err
-	}
-	tr := &http.Transport{
-		Proxy:           http.ProxyURL(proxy),
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	var client *http.Client
+	if r.cfg.UseProxy {
+		proxy, err := url.Parse(r.cfg.HttpProxy)
+		if err != nil {
+			return err
+		}
+		tr := &http.Transport{
+			Proxy:           http.ProxyURL(proxy),
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client = &http.Client{
+			Jar:       jar,
+			Transport: tr,
+			Timeout:   time.Second * 30,
+		}
+	} else {
+		client = &http.Client{
+			Jar:     jar,
+			Timeout: time.Second * 30,
+		}
 	}
 
-	client := &http.Client{
-		Jar:       jar,
-		Transport: tr,
-		Timeout:   time.Second * 30,
-	}
 	target := u.String()
 
 	r.logger.Debug("create conversation", zap.String("url", target))
@@ -199,11 +209,12 @@ func (r *Sydney) CreateConversation() (err error) {
 	if err != nil {
 		return
 	}
-	request.Header.Set("Referer", "https://www.bing.com/search?q=Bing+AI&showconv=1&FORM=hpcodx")
-	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.49")
+	request.Header.Set("referer", "https://www.bing.com/search?q=Bing+AI&showconv=1&FORM=hpcodx")
+	request.Header.Set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.49")
 	request.Header.Set("accept", "application/json")
 	request.Header.Set("x-ms-client-request-id", uuid.New().String())
 	request.Header.Set("x-ms-useragent", "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.10.0 OS/Win32")
+
 	response, err := client.Do(request)
 	if err != nil {
 		return
@@ -317,9 +328,7 @@ func (r *Sydney) Ask(prompt string) (answers <-chan string, err error) {
 					continue
 				}
 
-				if r.Debug {
-					r.logger.Debug("ws", zap.String("message", string(message)))
-				}
+				//r.logger.Debug("ws", zap.String("message", string(message)))
 
 				result := gjson.Parse(string(message))
 				_type := result.Get("type").Int()

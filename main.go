@@ -30,7 +30,7 @@ func main() {
 
 	logger := provider.NewLogger(loggerCfg.Level, "console", jackLogger)
 
-	bot := tg.NewBot(logger, config.TelegramBotConfig)
+	bot := tg.NewBot(logger, config.TelegramBotConfig, config.SydneyConfig)
 	if err := bot.Start(); err != nil {
 		logger.Error("bot start", zap.String("err", err.Error()))
 		return

@@ -17,11 +17,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewBot(logger *zap.Logger, cfg provider.TelegramBotConfig) *Bot {
+func NewBot(logger *zap.Logger, cfg provider.TelegramBotConfig, sydneyCfg provider.SydneyConfig) *Bot {
 	ctx, cancel := context.WithCancel(context.Background())
 	b := Bot{
 		logger:    logger,
 		cfg:       cfg,
+		sydneyCfg: sydneyCfg,
 		bingData:  cache.New(5*time.Minute, 10*time.Second),
 		processed: make(map[string]bool),
 		ctx:       ctx,
@@ -37,7 +38,8 @@ func NewBot(logger *zap.Logger, cfg provider.TelegramBotConfig) *Bot {
 type Bot struct {
 	logger *zap.Logger
 
-	cfg provider.TelegramBotConfig
+	cfg       provider.TelegramBotConfig
+	sydneyCfg provider.SydneyConfig
 
 	bingData *cache.Cache
 	bingLock sync.Mutex
@@ -60,7 +62,7 @@ func (b *Bot) GetSydney(tgUserId string, logger *zap.Logger) (*sydney.Sydney, er
 	if ok {
 		bing = val.(*sydney.Sydney)
 	} else {
-		bing = sydney.NewSydney(b.cfg.BingU, logger)
+		bing = sydney.NewSydney(logger, b.sydneyCfg)
 		err := bing.CreateConversation()
 		if err != nil {
 			return nil, err
