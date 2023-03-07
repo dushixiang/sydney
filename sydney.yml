@@ -1,0 +1,13 @@
+telegram-bot:
+  bing-u: ''
+  api-key: ''
+  callback-answer: 'An unexpected error occurred'
+  repeated-answer: 'It is being processed, please reply later.'
+  command-start-answer: 'Hello, you can say anything to me, and you can send the /reset command to reset the context session.'
+  command-help-answer: 'Hello, you can say anything to me, and you can send the /reset command to reset the context session.'
+  command-reset-answer: 'Session has been reset.'
+  use-proxy: false
+  http-proxy: http://127.0.0.1:1080
+
+logger:
+  level: debug
