@@ -77,8 +77,8 @@ func (r *Sydney) Handshake(conn *websocket.Conn) error {
 }
 
 func (r *Sydney) buildQuestion(prompt string) ([]byte, error) {
-	if r.invocationId == 0 && strings.HasPrefix(prompt, "Sydney") {
-		prompt = unlimited.WarpPrompt(prompt)
+	if r.invocationId == 0 {
+		prompt, _ = unlimited.WarpPrompt(prompt)
 		r.logger.Debug("first message", zap.String("prompt", prompt))
 	}
 	question := map[string]interface{}{
@@ -334,7 +334,7 @@ func (r *Sydney) Ask(prompt string) (answers <-chan string, err error) {
 					continue
 				}
 
-				r.logger.Sugar().Debug("ws", string(message))
+				//r.logger.Sugar().Debug("ws", string(message))
 
 				result := gjson.Parse(string(message))
 				_type := result.Get("type").Int()
