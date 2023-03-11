@@ -174,7 +174,7 @@ func (b *Bot) handleUserMessage(tgUserId string, from string, message *tgbotapi.
 			chat.Reset()
 			if err := chat.CreateConversation(); err != nil {
 				logger.Error("create conversation", zap.String("err", err.Error()))
-				msg.Text = "I can't create conversation with AI."
+				msg.Text = b.cfg.FallbackAnswer
 			} else {
 				msg.Text = b.cfg.CommandResetAnswer
 			}

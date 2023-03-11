@@ -10,8 +10,10 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sydney/provider"
 	"time"
+
+	"sydney/provider"
+	"sydney/unlimited"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -75,6 +77,10 @@ func (r *Sydney) Handshake(conn *websocket.Conn) error {
 }
 
 func (r *Sydney) buildQuestion(prompt string) ([]byte, error) {
+	if r.invocationId == 0 && strings.HasPrefix(prompt, "Sydney") {
+		prompt = unlimited.WarpPrompt(prompt)
+		r.logger.Debug("first message", zap.String("prompt", prompt))
+	}
 	question := map[string]interface{}{
 		"arguments": []map[string]interface{}{
 			{
@@ -328,7 +334,7 @@ func (r *Sydney) Ask(prompt string) (answers <-chan string, err error) {
 					continue
 				}
 
-				//r.logger.Debug("ws", zap.String("message", string(message)))
+				r.logger.Sugar().Debug("ws", string(message))
 
 				result := gjson.Parse(string(message))
 				_type := result.Get("type").Int()
